@@ -1,0 +1,4 @@
+CLASSES = [
+    'Metal',
+    'Plastic', 
+]
