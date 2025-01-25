@@ -65,7 +65,10 @@ class InferNCNN():
 
             print(f"Inference Time: {inference_time * 1000:.2f} ms")
             print(f"FPS: {1 / inference_time:.2f}")
-            cv2.imwrite('./outputs/prediction.jpg', result_img)
+
+            folder_name = Path(img_path).stem
+            file_name = f'./outputs/prediction_{folder_name}.jpg'
+            cv2.imwrite(file_name, result_img)
 
         if write_output:
             output_path = Path('./outputs')
