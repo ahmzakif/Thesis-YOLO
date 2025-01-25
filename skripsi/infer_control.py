@@ -11,7 +11,7 @@ from .classes import CLASSES
 from .speed_tracker import SpeedTracker
 
 
-class InferTorch():
+class InferNCNN():
     def __init__(self, model_path):
         self.model_path = model_path
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

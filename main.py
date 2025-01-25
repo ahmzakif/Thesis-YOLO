@@ -1,7 +1,6 @@
-import argparse
-import shutil
-
 import skripsi
+import shutil
+import argparse
 
 model = skripsi.InferNCNN(model_path='model\yolo11n_ncnn')
 
@@ -29,16 +28,3 @@ elif args.mode == 'prototype':
 elif args.mode == 'batch':
     shutil.rmtree('./outputs', ignore_errors=True)
     model.run_batches(args.path)
-
-'''
-Usage:
-
-python main.py --mode image --path testing/image.jpg --vis --txt
-python main.py --mode video --path testing/video.mp4 --vis
-
-python main.py --mode webcam --source 0 --vis
-python main.py --mode prototype --source 0 --vis
-
-python main.py --mode batch --path path/to/images/folder
-
-'''
