@@ -1,18 +1,14 @@
-import glob
 import time
-from pathlib import Path
+import numpy as np
 
 import cv2
-import matplotlib.pyplot as plt
-import numpy as np
 import torch
-import tqdm
 from ultralytics import YOLO
 
-from .classes import CLASSES
-from .speed_tracker import SpeedTracker
 from .controller import *
 from .visualize import vis
+from .classes import CLASSES
+from .speed_tracker import SpeedTracker
 
 
 class InferTorch():
@@ -23,37 +19,21 @@ class InferTorch():
         self.command = Controller()
 
     def init_model(self):
-        model = YOLO(self.model_path)
+        model = YOLO(self.model_path, task='detect')
         return model
 
-    def preprocess(self, img, img_size=640):
-        # Resize and normalize the input image
-        h, w, _ = img.shape
-        r = img_size / max(h, w)
-        new_w, new_h = int(w * r), int(h * r)
-        resized_img = cv2.resize(img, (new_w, new_h), interpolation=cv2.INTER_LINEAR)
-        padded_img = np.full((img_size, img_size, 3), 114, dtype=np.uint8)
-        padded_img[:new_h, :new_w, :] = resized_img
-
-        img = padded_img.astype(np.float32)
-        img = img / 255.0  # Normalize to [0, 1]
-        img = img.transpose(2, 0, 1)  # HWC to CHW
-        img = np.expand_dims(img, axis=0)  # Add batch dimension
-        return torch.from_numpy(img).to(self.device), r
-
-    def postprocess(self, outputs, ratio, conf_thres=0.5, iou_thres=0.45):
-        detections = outputs[0].boxes  
+    def postprocess(self, outputs, conf_thres=0.5, iou_thres=0.45):
+        detections = outputs[0].boxes
         boxes = []
-        
-        for i, box in enumerate(detections):  
-            conf = box.conf.item()  
-            if conf > conf_thres:  
-                x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()  
-                cls = int(box.cls.item())  
-                boxes.append([x1 / ratio, y1 / ratio, x2 / ratio, y2 / ratio, conf, cls])
+
+        for i, box in enumerate(detections):
+            conf = box.conf.item()
+            if conf > conf_thres:
+                x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
+                cls = int(box.cls.item())
+                boxes.append([x1, y1, x2, y2, conf, cls])
 
         return boxes
-
 
     def visualize(self, img, boxes, conf_thr=0.5):
         if boxes:
@@ -82,19 +62,17 @@ class InferTorch():
                 print("Failed to capture frame.")
                 break
 
-            # Preprocess frame
-            img_tensor, ratio = self.preprocess(frame)
-            prev_time = time.time()
+            start_time = time.time()
 
             # Run inference
             with torch.no_grad():
-                outputs = self.model(img_tensor)
+                outputs = self.model(frame)
 
             # Postprocess results
-            boxes = self.postprocess(outputs, ratio)
+            boxes = self.postprocess(outputs)
 
-            current_time = time.time()
-            inference_time = current_time - prev_time
+            end_time = time.time()
+            inference_time = end_time - start_time
             
             if enable_vis and len(boxes) > 0:
                 box_coords = [box[:4] for box in boxes]
@@ -117,7 +95,7 @@ class InferTorch():
 
                         elif detected == 'Plastic':
                             print("Plastic detected.")
-                            self.servo.servo_control('plastic') 
+                            self.command.servo_control('plastic') 
 
                     if cls_name == 'Metal' and detected != 'Metal':
                         start_time = time.time()
@@ -138,7 +116,7 @@ class InferTorch():
                 cv2.putText(result_img, f'Inference Time: {inference_time * 1000:.2f} ms', 
                             (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (250, 230, 240), 2)
 
-                tracker.speed_performance(prev_time, current_time, limit_frame=500)
+                tracker.speed_performance(start_time, end_time, limit_frame=500)
                 cv2.imshow("Webcam Inference", result_img)
 
             if cv2.waitKey(1) & 0xFF == ord('q'):

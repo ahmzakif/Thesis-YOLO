@@ -4,7 +4,7 @@ import shutil
 
 import skripsi
 
-model = skripsi.InferTorch(model_path='models/yolo11n_v4_bs32.pt')
+model = skripsi.InferNCNN(model_path='model\yolo11n_v4_bs32_ncnn_model')
 
 parser = argparse.ArgumentParser(description='Object Detection')
 parser.add_argument('--path', type=str, help='Input Path')

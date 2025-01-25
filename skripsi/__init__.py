@@ -1,1 +1,1 @@
-from .infer_torch import *
+from .infer_ncnn import *

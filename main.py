@@ -3,9 +3,10 @@ import shutil
 
 import skripsi
 
-model = skripsi.InferTorch(model_path='model/yolo11n_v4_bs32.pt')
+model = skripsi.InferNCNN(model_path='model\yolo11n_v4_bs32_ncnn_model')
 
 parser = argparse.ArgumentParser(description='Infer YOLO model')
+
 parser.add_argument('--mode', type=str, help='Toggle Run Image/Video/Batch')
 parser.add_argument('--path', type=str, help='Input Path')
 parser.add_argument('--src', type=int, help='Input Source')
@@ -22,8 +23,8 @@ elif args.mode == 'video':
 elif args.mode == 'webcam':
     model.run_webcam(args.src, enable_vis=args.vis)
 
-elif args.mode == 'prototype':
-    model.run(args.src, enable_vis=args.vis)
+# elif args.mode == 'prototype':
+#     model.run(args.src, enable_vis=args.vis)
 
 elif args.mode == 'batch':
     shutil.rmtree('./outputs', ignore_errors=True)

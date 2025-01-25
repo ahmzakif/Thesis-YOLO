@@ -9,49 +9,32 @@ import numpy as np
 import matplotlib.pyplot as plt
 from ultralytics import YOLO
 
-from .classes import CLASSES
-from .speed import SpeedTracker
 from .visualize import vis
+from .classes import CLASSES
+from .speed_tracker import SpeedTracker
 
-
-class InferTorch():
+class InferNCNN():
     def __init__(self, model_path):
         self.model_path = model_path
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = self.init_model()
 
     def init_model(self):
-        model = YOLO(self.model_path)
+        model = YOLO(self.model_path, task='detect')
         return model
 
-    def preprocess(self, img, img_size=640):
-        # Resize and normalize the input image
-        h, w, _ = img.shape
-        r = img_size / max(h, w)
-        new_w, new_h = int(w * r), int(h * r)
-        resized_img = cv2.resize(img, (new_w, new_h), interpolation=cv2.INTER_LINEAR)
-        padded_img = np.full((img_size, img_size, 3), 114, dtype=np.uint8)
-        padded_img[:new_h, :new_w, :] = resized_img
-
-        img = padded_img.astype(np.float32)
-        img = img / 255.0  # Normalize to [0, 1]
-        img = img.transpose(2, 0, 1)  # HWC to CHW
-        img = np.expand_dims(img, axis=0)  # Add batch dimension
-        return torch.from_numpy(img).to(self.device), r
-
-    def postprocess(self, outputs, ratio, conf_thres=0.5, iou_thres=0.45):
-        detections = outputs[0].boxes  
+    def postprocess(self, outputs, conf_thres=0.5, iou_thres=0.45):
+        detections = outputs[0].boxes
         boxes = []
-        
-        for i, box in enumerate(detections):  
-            conf = box.conf.item()  
-            if conf > conf_thres:  
-                x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()  
-                cls = int(box.cls.item())  
-                boxes.append([x1 / ratio, y1 / ratio, x2 / ratio, y2 / ratio, conf, cls])
+
+        for i, box in enumerate(detections):
+            conf = box.conf.item()
+            if conf > conf_thres:
+                x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
+                cls = int(box.cls.item())
+                boxes.append([x1, y1, x2, y2, conf, cls])
 
         return boxes
-
 
     def visualize(self, img, boxes, conf_thr=0.5):
         if boxes:
@@ -64,19 +47,16 @@ class InferTorch():
 
     def run_image(self, img_path, enable_vis=False, write_output=False):
         img = cv2.imread(img_path)
-        inference_time = end - start
-
-        # Preprocess image
-        img_tensor, ratio = self.preprocess(img)
-        start = time.time()
 
         # Run inference
+        start_time = time.time()
         with torch.no_grad():
-            outputs = self.model(img_tensor)
-        end = time.time()
+            outputs = self.model(img)
+        end_time = time.time()
+        inference_time = end_time - start_time
 
         # Postprocess results
-        boxes = self.postprocess(outputs, ratio)
+        boxes = self.postprocess(outputs)
 
         if enable_vis:
             result_img = self.visualize(img, boxes)
@@ -97,7 +77,7 @@ class InferTorch():
                     f.write(" ".join(map(str, box)) + "\n")
 
         return boxes
-    
+
     def run_video(self, video_path, enable_vis=False):
         cap = cv2.VideoCapture(video_path)
         imageWidth = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -111,18 +91,15 @@ class InferTorch():
             if not ret:
                 print("Failed to capture frame.")
                 break
-            
-            if ret:
-                # Preprocess frame
-                img_tensor, ratio = self.preprocess(frame)
-                start_time = time.time()
 
+            if ret:
                 # Run inference
+                start_time = time.time()
                 with torch.no_grad():
-                    outputs = self.model(img_tensor)
-                
+                    outputs = self.model(frame)
+
                 # Postprocess results
-                boxes = self.postprocess(outputs, ratio)
+                boxes = self.postprocess(outputs)
 
                 end_time = time.time()
                 inference_time = end_time - start_time
@@ -135,7 +112,7 @@ class InferTorch():
                     resized_img = cv2.resize(result_img, (imageWidth, imageHeight))
 
                     cv2.imshow('Video Inference', resized_img)
-                    
+
                     out.write(result_img)
 
                     if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -145,44 +122,41 @@ class InferTorch():
 
         cap.release()
         cv2.destroyAllWindows()
-    
+
     def run_webcam(self, source, enable_vis=False):
         cap = cv2.VideoCapture(source)
         tracker = SpeedTracker()
-        
+
         if not cap.isOpened():
             print("Error: Could not open camera.")
             return
-        
+
         while True:
             ret, frame = cap.read()
             if not ret:
                 print("Failed to capture frame.")
                 break
-            
-            if ret:
-                # Preprocess frame
-                img_tensor, ratio = self.preprocess(frame)
-                start_time  = time.time()
 
+            if ret:
                 # Run inference
+                start_time = time.time()
                 with torch.no_grad():
-                    outputs = self.model(img_tensor, verbose=False)
-                
+                    outputs = self.model(frame, verbose=False)
+
                 # Postprocess results
-                boxes = self.postprocess(outputs, ratio) 
+                boxes = self.postprocess(outputs)
 
                 end_time = time.time()
                 inference_time = end_time - start_time
-                
+
                 if enable_vis:
                     result_img = self.visualize(frame, boxes, conf_thr=0.5)
 
-                    cv2.putText(result_img, f'FPS: {1 / inference_time:.2f}', 
+                    cv2.putText(result_img, f'FPS: {1 / inference_time:.2f}',
                                 (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (213, 239, 255), 2)
-                    cv2.putText(result_img, f'Inference Time: {inference_time * 1000:.2f} ms', 
+                    cv2.putText(result_img, f'Inference Time: {inference_time * 1000:.2f} ms',
                                 (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (250, 230, 240), 2)
-                    
+
                     tracker.speed_performance(start_time, end_time, limit_frame=500)
 
                     cv2.imshow('Webcam Inference', result_img)
@@ -196,4 +170,4 @@ class InferTorch():
 
     def run_batches(self, dir_path):
         for img_path in tqdm.tqdm(glob.glob(dir_path + '/*.jpg')):
-            self.run(img_path, enable_vis=False, write_output=True)
+            self.run_image(img_path, enable_vis=False, write_output=True)
