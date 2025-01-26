@@ -2,7 +2,7 @@ import skripsi
 import shutil
 import argparse
 
-model = skripsi.InferNCNN(model_path='model\yolo11n_v4_bs32_ncnn_model')
+model = skripsi.InferNCNN(model_path='model\yolo11n_ncnn_model')
 
 parser = argparse.ArgumentParser(description='Infer YOLO model')
 
@@ -14,7 +14,7 @@ parser.add_argument('--txt', help='Toggle Write Box to .txt', default=False, des
 
 args = parser.parse_args()
 if args.mode == 'image':
-    model.run_image(args.path, enable_vis=args.vis, write_output=args.txt)
+    model.run_image(args.path, enable_vis=args.vis, enable_write=args.txt)
 
 elif args.mode == 'video':
     model.run_video(args.path, enable_vis=args.vis)
@@ -22,8 +22,8 @@ elif args.mode == 'video':
 elif args.mode == 'webcam':
     model.run_webcam(args.src, enable_vis=args.vis)
 
-# elif args.mode == 'prototype':
-#     model.run(args.src, enable_vis=args.vis)
+elif args.mode == 'prototype':
+    model.run(args.src, enable_vis=args.vis)
 
 elif args.mode == 'batch':
     shutil.rmtree('./outputs', ignore_errors=True)

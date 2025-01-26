@@ -1,0 +1,15 @@
+description: Ultralytics YOLO11n model trained on /content/datasets/skripsi-yolo-4/data.yaml
+author: Ultralytics
+date: '2025-01-26T09:24:49.867780'
+version: 8.3.34
+license: AGPL-3.0 License (https://ultralytics.com/license)
+docs: https://docs.ultralytics.com
+stride: 32
+task: detect
+batch: 1
+imgsz:
+- 640
+- 640
+names:
+  0: Metal
+  1: Plastic

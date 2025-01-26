@@ -25,7 +25,6 @@ class SpeedTracker:
             print(f"Average FPS: {self.total_fps / self.frame_count:.2f}")
             print(f"Highest FPS: {self.highest_fps:.2f}")
 
-            # Reset statistics
             self.frame_count = 0
             self.total_latency = 0
             self.total_fps = 0

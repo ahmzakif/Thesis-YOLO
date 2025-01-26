@@ -16,12 +16,9 @@ class Controller:
         self.MIN_DEGREE = min_degree
         self.MAX_DEGREE = max_degree
         self.INITIAL_DEGREE = initial_degree
-        
-        self.turning = False
-        
+        self.turning = False    
         self.kit = ServoKit(channels=16)
         self.kit.servo[self.SERVO_PIN].angle = self.INITIAL_DEGREE
-        
         self.ser = serial.Serial(serial_port, baud_rate, timeout=1)
         time.sleep(2)  
 
@@ -48,8 +45,7 @@ class Controller:
                     target=self.send_command,
                     args=(self.MIN_DEGREE, 'M'),
                     daemon=True
-                ).start()
-                
+                ).start()      
             elif object_type.lower() == 'plastic':
                 threading.Thread(
                     target=self.send_command,
