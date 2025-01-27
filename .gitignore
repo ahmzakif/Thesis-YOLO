@@ -1,3 +1,4 @@
 outputs/
-# datasets/
+datasets/train/
+datasets/valid/
 skripsi/__pycache__/
