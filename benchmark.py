@@ -3,7 +3,7 @@ import os
 import shutil
 import argparse
 
-model = skripsi.InferNCNN(model_path='model\yolo11n_ncnn_model')
+model = skripsi.InferNCNN(model_path='model/best11n_ncnn_model')
 
 parser = argparse.ArgumentParser(description='Object Detection')
 parser.add_argument('--path', type=str, help='Input Path')

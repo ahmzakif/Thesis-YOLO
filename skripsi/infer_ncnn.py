@@ -23,7 +23,7 @@ class InferNCNN():
         model = YOLO(self.model_path, task='detect')
         return model
 
-    def postprocess(self, outputs, conf_thres=0.5, iou_thres=0.45):
+    def postprocess(self, outputs, conf_thres=0.6, iou_thres=0.6):
         detections = outputs[0].boxes
         boxes = []
         for i, box in enumerate(detections):
@@ -35,7 +35,7 @@ class InferNCNN():
 
         return boxes
 
-    def visualize(self, img, boxes, conf_thr=0.5):
+    def visualize(self, img, boxes, conf_thr=0.6):
         if boxes:
             final_boxes = np.array(boxes)[:, :4]
             final_scores = np.array(boxes)[:, 4]
@@ -68,7 +68,7 @@ class InferNCNN():
                 final_boxes = np.array(boxes)[:, :4]
                 final_scores = np.array(boxes)[:, 4]
                 final_cls_inds = np.array(boxes)[:, 5].astype(int)
-                box_to_txt(img_path, final_boxes, final_scores, final_cls_inds, CLASSES, conf=0.5)
+                box_to_txt(img_path, final_boxes, final_scores, final_cls_inds, CLASSES, conf=0.6)
 
         return boxes
 
@@ -93,7 +93,7 @@ class InferNCNN():
                 inference_time = end_time - start_time
 
                 if enable_vis:
-                    result_img = self.visualize(frame, boxes, conf_thr=0.5)
+                    result_img = self.visualize(frame, boxes, conf_thr=0.6)
                     cv2.putText(result_img, f'FPS: {1 / inference_time:.2f}',
                                 (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (213, 239, 255), 2)
                     cv2.putText(result_img, f'Inference Time: {inference_time * 1000:.2f} ms',
