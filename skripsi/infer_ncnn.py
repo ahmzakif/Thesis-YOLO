@@ -49,7 +49,7 @@ class InferNCNN():
         img = cv2.imread(img_path)
         start_time = time.time()
         with torch.no_grad():
-            outputs = self.model(img)
+            outputs = self.model(img, verbose=False)
         boxes = self.postprocess(outputs)
         end_time = time.time()
         inference_time = end_time - start_time
